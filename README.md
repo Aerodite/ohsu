@@ -1,0 +1,2 @@
+# ohsu
+osu! hitsound updater
