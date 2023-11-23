@@ -3,22 +3,28 @@ osu! hitsound updater (o!hsu) - by Anthony Garcia Roman
 Last edited 21/11/2023.
 */
 
+#include <dirent.h>
+#include <conio.h>
 #include <sys\stat.h>
-#include <iostream>
 #include <fstream>
-#include "Program/DirLookup.h"
+#include "SkinLookup.h"
+#include "DirLookup.h"
+#include <iostream>
+#include <ios>
+#include <stdio.h>
 
 using namespace std;
 
+//Skin to be edited
+string clientSkin;
+//Skin to take hitsounds from
+string hostSkin;
+
 int main() {
-    //Skin to be edited
-    string clientSkin = "";
-    //Skin to take hitsounds from
-    string hostSkin = "";
 
+    //import directory lookup function
     DrLookup();
-
-
+    //request user input to search for the skins
     cout
     <<
     "----------------\n"
@@ -28,14 +34,103 @@ int main() {
     cout << "Which skin do you want to take the hitsounds from? (case & white space sensitive)\n";
     cin >> hostSkin;
 
-    //turn into pointers so can be addressed in SkinLookup.h to search
-    //inside the skin files for the hitsounds.
-    &clientSkin = *clientSkinPtr;
-    string &&clientSkinPtr = osuSkinFolder + "\\" + clientSkin;
-    &hostSkin = *hostSkinPtr;
-    string &&hostSkinPtr = osuSkinFolder + "\\" + hostSkin;
+    oskLookup();
+
+    //make able to search inside the skin files for the hitsounds.
+    char *clientSkinPtr = osuSkinFolder + "\\" + clientSkin;
+    char *hostSkinPtr = osuSkinFolder + "\\" + hostSkin;
+
+    char *oldOskHs = clientSkinPtr;
+    char *newOskHs = hostSkinPtr;
 
 
+
+
+    //This won't work unless it's reinterpreted (?).
+    char *oldHs[] = {oldOskHs};
+    char *newHs[] = {newOskHs};
+
+
+    ifstream infile;
+    struct dirent *d;
+    struct stat dst{};
+
+
+
+    DIR *dir;
+
+    string path = string(clientSkinPtr) + "\\";
+
+    dir = opendir(path.c_str());
+
+    if (dir != nullptr) {
+        for(d = readdir(dir); d != nullptr; d = readdir(dir))
+        {
+            string type;
+            type = d->d_name;
+            type += path;
+            if (stat(type.c_str(), &dst) == 0)
+            {
+                //Unnecessary for the function of the code.
+                //Very helpful for debugging though.
+                /*
+                if (dst.st_mode & S_IFDIR)
+                {
+                    type = "is a folder.";
+                }
+                else if (dst.st_mode & S_IFREG)
+                {
+                    type = "is a file.";
+                }
+                 */
+            }
+
+
+
+            string path = string(clientSkinPtr) +  "\\";
+
+            dir = opendir(path.c_str());
+
+            if (dir != NULL) {
+                for (d = readdir(dir); d != NULL; d = readdir(dir)) {
+                    string type = d->d_name;
+                    type += path;
+                    if (stat(type.c_str(), &dst) == 0) {
+                    }
+
+                        infile.open("hsbanks.txt");
+                        if (infile.is_open()) {
+                            while (!infile.eof()) {
+                                string line;
+                                getline(infile, line);
+                                if (remove(oldOskHs) == 0)
+                                    printf("Deleted Successfully \n");
+                                else
+                                    printf("Unable to delete the file \n");
+                                if (line == d->d_name) {
+                                    //Deletes the file at location if exists
+                                    if (rename(oldOskHs, newOskHs) != 0)
+                                        perror("Error moving file");
+                                    else(cout << "Moving file(s)... \n");
+
+
+                                    //Creates a new file at location
+                                    if (infile.eof()) {
+                                        break;
+                                    }
+                                    if (infile.fail()) {
+                                        infile.clear();
+                                        infile.ignore('\n');
+                                        continue;
+                                    }
+                                }
+                        }
+                        infile.close();
+                    }
+                }
+            }
+            closedir(dir);
+        }
+    }
     return 0;
-
 }

@@ -13,13 +13,9 @@ Last edited 21/11/2023.
 #include "Program/DirLookup.h"
 
 using namespace std;
-//Global Variable to find UserName
-TCHAR UserName [ UNLEN + 1 ];
-DWORD UserName_len = UNLEN + 1;
 
 //Global Variable to find Skin Folder
 int DrLookup();
-string osuSkinFolder = &osuSkinFolderPtr;
 int oskLookup(){
     ifstream infile;
 
@@ -40,6 +36,7 @@ int oskLookup(){
             type = path + type;
             if (stat(type.c_str(), &dst) == 0)
             {
+                /*
                 if (dst.st_mode & S_IFDIR)
                 {
                     // for verification if necessary
@@ -49,7 +46,7 @@ int oskLookup(){
                 {
                     // for verification if necessary
                     type = "is a FILE.";
-                }
+                }*/
             }
             cout<<d->d_name<<endl;
         }

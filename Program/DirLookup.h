@@ -13,12 +13,12 @@ Last edited 21/11/2023.
 
 using namespace std;
 //Global Variable to find UserName
-TCHAR UserName [ UNLEN + 1 ];
-DWORD UserName_len = UNLEN + 1;
+
 
 //Global Variable to find Skin Folder
 string osuSkinFolder;
 int DrLookup(){
+    TCHAR windowsUserName [UNLEN + 1];
     ifstream infile;
 
     //pointers to point to directories.
@@ -29,13 +29,13 @@ int DrLookup(){
     //Startup Prompt
     cout << "o!hsu (Terminal Version) \n";
     cout << "Enter your skins directory (if it's set to default just type d) \n"
-            "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins)";
+            "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins) \n";
     cin >> osuSkinFolder;
 
 
     //Default case, goes to default osu! skin folder in AppData.
     if (osuSkinFolder == "d") {
-        osuSkinFolder = "C:\\Users\\" + string(UserName) + "\\AppData\\Local\\osu!\\Skins";
+        osuSkinFolder = "C:\\Users\\" + string(windowsUserName) + R"(\AppData\Local\osu!\Skins)";
     }
     //Adds additional backslash to the path for future use (finding the files themselves).
     string path = osuSkinFolder + "\\";
@@ -51,7 +51,7 @@ int DrLookup(){
             string type = d->d_name;
             type = path + type;
             if (stat(type.c_str(), &dst) == 0)
-            {
+            {/*
                 if (dst.st_mode & S_IFDIR)
                 {
                     // for verification if necessary
@@ -61,7 +61,7 @@ int DrLookup(){
                 {
                     // for verification if necessary
                     type = "is a FILE.";
-                }
+                }*/
             }
             cout<<d->d_name<<endl;
         }
@@ -73,6 +73,3 @@ int DrLookup(){
 
     return 0;
 }
-
-//initialise pointer to be able to be used in other file.
-int *osuSkinFolderPtr();
