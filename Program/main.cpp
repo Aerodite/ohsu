@@ -23,7 +23,8 @@ string hostSkin;
 int main() {
 
     //import directory lookup function
-    DrLookup();
+    DirLookup::DrLookup();
+    SkinLookup::oskLookup();
     //request user input to search for the skins
     cout
     <<
@@ -34,21 +35,22 @@ int main() {
     cout << "Which skin do you want to take the hitsounds from? (case & white space sensitive)\n";
     cin >> hostSkin;
 
-    oskLookup();
-
     //make able to search inside the skin files for the hitsounds.
-    char *clientSkinPtr = osuSkinFolder + "\\" + clientSkin;
-    char *hostSkinPtr = osuSkinFolder + "\\" + hostSkin;
+    //DirLookup is a class, osuSkinFolder is a statics string variable inside the class.
+    //ClientSkin is a string variable that is assigned by the user.
+    //ClientSkinPtr is a pointer to the string variable.
+    char *clientSkinPtr = const_cast<char *>((DirLookup::osuSkinFolder + "\\" + clientSkin).c_str());
+    char *hostSkinPtr = const_cast<char *>((DirLookup::osuSkinFolder + "\\" + hostSkin).c_str());
 
-    char *oldOskHs = clientSkinPtr;
-    char *newOskHs = hostSkinPtr;
+    char *oldOskHs = {clientSkinPtr};
+    char *newOskHs = {hostSkinPtr};
 
 
 
 
     //This won't work unless it's reinterpreted (?).
-    char *oldHs[] = {oldOskHs};
-    char *newHs[] = {newOskHs};
+    char *oldHs[] = {(oldOskHs)};
+    char *newHs[] = {(newOskHs)};
 
 
     ifstream infile;

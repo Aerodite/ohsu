@@ -3,6 +3,9 @@ osu! hitsound updater (o!hsu) - Skin Lookup | by Anthony Garcia Roman
 Last edited 21/11/2023.
 */
 
+#ifndef OHSU_SKINLOOKUP_H
+#define OHSU_SKINLOOKUP_H
+
 #include <sys\stat.h>
 #include <iostream>
 #include <fstream>
@@ -14,44 +17,47 @@ Last edited 21/11/2023.
 
 using namespace std;
 
+class SkinLookup {
+
+public:
 //Global Variable to find Skin Folder
-int DrLookup();
-int oskLookup(){
-    ifstream infile;
+    static int oskLookup() {
+        ifstream infile;
 
-    struct dirent *d;
-    struct stat dst;
+        struct dirent *d;
+        struct stat dst;
 
 
-    DIR *dir;
+        DIR *dir;
 
-    string path = osuSkinFolder + "\\";
 
-    dir = opendir(path.c_str());
+        string path = DirLookup::osuSkinFolder + "\\";
 
-    if (dir != NULL) {
-        for(d = readdir(dir); d != NULL; d = readdir(dir))
-        {
-            string type = d->d_name;
-            type = path + type;
-            if (stat(type.c_str(), &dst) == 0)
-            {
-                /*
-                if (dst.st_mode & S_IFDIR)
-                {
-                    // for verification if necessary
-                    type = "is a FOLDER.";
+        dir = opendir(path.c_str());
+
+        if (dir != NULL) {
+            for (d = readdir(dir); d != NULL; d = readdir(dir)) {
+                string type = d->d_name;
+                type = path + type;
+                if (stat(type.c_str(), &dst) == 0) {
+                    /*
+                    if (dst.st_mode & S_IFDIR)
+                    {
+                        // for verification if necessary
+                        type = "is a FOLDER.";
+                    }
+                    else if (dst.st_mode & S_IFREG)
+                    {
+                        // for verification if necessary
+                        type = "is a FILE.";
+                    }*/
                 }
-                else if (dst.st_mode & S_IFREG)
-                {
-                    // for verification if necessary
-                    type = "is a FILE.";
-                }*/
+                cout << d->d_name << endl;
             }
-            cout<<d->d_name<<endl;
+            closedir(dir);
         }
-        closedir(dir);
-    }
 
-    return 0;
-}
+        return 0;
+    }
+};
+#endif
