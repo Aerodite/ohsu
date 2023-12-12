@@ -9,3 +9,4 @@ This was just made as a fun project, fueled by the fact I don't like some skins 
 If you wish to contribute, feel free to submit a pull request, no guarantee it will make it in, but I'll try my best to accomodate any changes 🙂
 
 ---
+* *Currently just for osu!stable, support for osu!lazer would probably be the most complicated programming thing i've ever done, however I would like to get full parity no matter the client eventually.*
