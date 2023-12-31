@@ -114,7 +114,7 @@ int main() {
 
             dir = opendir(path.c_str());
 
-            string backupDirPath = string(clientSkinPtr) + "\\oldhs";
+            string backupDirPath = string(path) + "\\oldhs";
             mkdir(backupDirPath.c_str()); // Create new directory
 
             if (dir != nullptr) {

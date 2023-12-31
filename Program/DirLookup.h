@@ -6,7 +6,7 @@ Last edited 21/11/2023.
 #ifndef OHSU_DIRLOOKUP_H
 #define OHSU_DIRLOOKUP_H
 
-#include <sys\stat.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
@@ -30,9 +30,24 @@ public:
 
         //Startup Prompt
         cout << "o!hsu (Terminal Version) \n";
-        cout << "Enter your skins directory (if it's set to default just type d) \n"
-                "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins) \n";
-        cin >> osuSkinFolder;
+        while (true) {
+            cout << "Enter your skins directory (if it's set to default just type d) \n"
+            "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins) \n";
+            cin >> DirLookup::osuSkinFolder;
+            if (DirLookup::osuSkinFolder.empty()) {
+                cout << "Error: Skin folder cannot be empty. Please try again.\n";
+                continue;
+            }
+            struct stat buffer{};
+            if (stat(DirLookup::osuSkinFolder.c_str(), &buffer) != 0) {
+                cout << "Error: Skins directory does not exist. Please try again.\n";
+                continue;
+            }
+            break;
+        }
+
+
+
 
 
         //Default case, goes to default osu! skin folder in AppData.
