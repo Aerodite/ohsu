@@ -19,17 +19,14 @@ using namespace std;
 
 
 //Global Variable to find Skin Folder
-
 class DirLookup {
 public:
     static int DrLookup(){
-        TCHAR windowsUserName [UNLEN + 1];
         ifstream infile;
 
         //pointers to point to directories.
         struct dirent *d;
         struct stat dst;
-        DIR *dir;
 
         //Startup Prompt
         cout << "o!hsu (Terminal Version) \n";
@@ -40,13 +37,14 @@ public:
 
         //Default case, goes to default osu! skin folder in AppData.
         if (osuSkinFolder == "d") {
+            TCHAR windowsUserName [UNLEN + 1];
             osuSkinFolder = "C:\\Users\\" + string(windowsUserName) + R"(\AppData\Local\osu!\Skins)";
         }
         //Adds additional backslash to the path for future use (finding the files themselves).
-        string path = osuSkinFolder + "\\";
+        const string path = osuSkinFolder + "\\";
 
         //Opens the directory read into cin.
-        dir = opendir(path.c_str());
+        DIR *dir = opendir(path.c_str());
 
         //Verifies directory is not NULL, and assigns a type to each type of file.
         //e.g. if it's a folder, it'll say it's a folder (mainly for debugging purposes).
@@ -83,5 +81,6 @@ public:
     string *osuSkinFolderPtr = &osuSkinFolder;
 
 };
+string DirLookup::osuSkinFolder;
 
 #endif

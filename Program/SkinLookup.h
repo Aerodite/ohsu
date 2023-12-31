@@ -24,19 +24,15 @@ public:
     static int oskLookup() {
         ifstream infile;
 
-        struct dirent *d;
-        struct stat dst;
+        struct stat dst{};
 
 
-        DIR *dir;
+        const string path = DirLookup::osuSkinFolder + "\\";
 
+        DIR *dir = opendir(path.c_str());
 
-        string path = DirLookup::osuSkinFolder + "\\";
-
-        dir = opendir(path.c_str());
-
-        if (dir != NULL) {
-            for (d = readdir(dir); d != NULL; d = readdir(dir)) {
+        if (dir != nullptr) {
+            for (const struct dirent *d = readdir(dir); d != nullptr; d = readdir(dir)) {
                 string type = d->d_name;
                 type = path + type;
                 if (stat(type.c_str(), &dst) == 0) {
