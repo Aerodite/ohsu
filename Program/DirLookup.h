@@ -33,28 +33,27 @@ public:
         while (true) {
             cout << "Enter your skins directory (if it's set to default just type d) \n"
             "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins) \n";
-            cin >> DirLookup::osuSkinFolder;
-            if (DirLookup::osuSkinFolder.empty()) {
+            cin >> osuSkinFolder;
+            if (osuSkinFolder.empty()) {
                 cout << "Error: Skin folder cannot be empty. Please try again.\n";
                 continue;
             }
             struct stat buffer{};
-            if (stat(DirLookup::osuSkinFolder.c_str(), &buffer) != 0) {
+            if (stat(osuSkinFolder.c_str(), &buffer) != 0 && osuSkinFolder != "d" && osuSkinFolder != "default") {
                 cout << "Error: Skins directory does not exist. Please try again.\n";
                 continue;
             }
             break;
+
+        }
+        //default case (goes to appdata)
+        if (osuSkinFolder == "d" || osuSkinFolder == "default") {
+            char username[UNLEN + 1];
+            DWORD username_len = UNLEN + 1;
+            GetUserName(username, &username_len);
+            osuSkinFolder = "C:\\Users\\" + string(username) + R"(\AppData\Local\osu!\Skins)";
         }
 
-
-
-
-
-        //Default case, goes to default osu! skin folder in AppData.
-        if (osuSkinFolder == "d") {
-            TCHAR windowsUserName [UNLEN + 1];
-            osuSkinFolder = "C:\\Users\\" + string(windowsUserName) + R"(\AppData\Local\osu!\Skins)";
-        }
         //Adds additional backslash to the path for future use (finding the files themselves).
         const string path = osuSkinFolder + "\\";
 
