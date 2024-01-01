@@ -1,6 +1,6 @@
 /*
 osu! hitsound updater (o!hsu) - Skin Lookup | by Anthony Garcia Roman
-Last edited 21/11/2023.
+Last edited 31/12/2023.
 */
 
 #ifndef OHSU_SKINLOOKUP_H
