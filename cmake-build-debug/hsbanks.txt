@@ -5,7 +5,6 @@ normal-hitclap.wav
 normal-sliderslide.wav
 normal-sliderwhistle.wav
 normal-slidertick.wav
-
 soft-hitnormal.wav
 soft-hitwhistle.wav
 soft-hitfinish.wav
@@ -13,7 +12,6 @@ soft-hitclap.wav
 soft-sliderslide.wav
 soft-sliderwhistle.wav
 soft-sliderslide.wav
-
 hitnormal.wav
 hitwhistle.wav
 hitfinish.wav
@@ -28,7 +26,6 @@ hitclap.wav
 sliderslide.wav
 sliderwhistle.wav
 sliderslide.wav
-
 drum-hitnormal.wav
 drum-hitwhistle.wav
 drum-hitfinish.wav
@@ -38,7 +35,6 @@ drum-sliderwhistle.wav
 drum-slidertick.wav
 spinnerspin.wav
 spinnerbonus.wav
-
 normal-hitnormal.ogg
 normal-hitwhistle.ogg
 normal-hitfinish.ogg
@@ -46,7 +42,6 @@ normal-hitclap.ogg
 normal-sliderslide.ogg
 normal-sliderwhistle.ogg
 normal-slidertick.ogg
-
 soft-hitnormal.ogg
 soft-hitwhistle.ogg
 soft-hitfinish.ogg
@@ -54,7 +49,6 @@ soft-hitclap.ogg
 soft-sliderslide.ogg
 soft-sliderwhistle.ogg
 soft-sliderslide.ogg
-
 hitnormal.ogg
 hitwhistle.ogg
 hitfinish.ogg
@@ -69,7 +63,6 @@ hitclap.ogg
 sliderslide.ogg
 sliderwhistle.ogg
 sliderslide.ogg
-
 drum-hitnormal.ogg
 drum-hitwhistle.ogg
 drum-hitfinish.ogg
@@ -79,7 +72,6 @@ drum-sliderwhistle.ogg
 drum-slidertick.ogg
 spinnerspin.ogg
 spinnerbonus.ogg
-
 normal-hitnormal.mp3
 normal-hitwhistle.mp3
 normal-hitfinish.mp3
@@ -87,7 +79,6 @@ normal-hitclap.mp3
 normal-sliderslide.mp3
 normal-sliderwhistle.mp3
 normal-slidertick.mp3
-
 soft-hitnormal.mp3
 soft-hitwhistle.mp3
 soft-hitfinish.mp3
@@ -95,7 +86,6 @@ soft-hitclap.mp3
 soft-sliderslide.mp3
 soft-sliderwhistle.mp3
 soft-sliderslide.mp3
-
 hitnormal.mp3
 hitwhistle.mp3
 hitfinish.mp3
@@ -110,7 +100,6 @@ hitclap.mp3
 sliderslide.mp3
 sliderwhistle.mp3
 sliderslide.mp3
-
 drum-hitnormal.mp3
 drum-hitwhistle.mp3
 drum-hitfinish.mp3

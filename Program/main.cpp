@@ -1,13 +1,16 @@
+#include "DirLookup.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fstream>
 #include <iostream>
 #include "SkinLookup.h"
-#include "DirLookup.h"
+#include <windows.h>
 
 using namespace std;
 
-string getUserInput(const string& prompt, const string& skinFolder) {
+
+//gets user input for the skin name(s)
+string getUserInput(const string& prompt, const string& skinFolder){
     string userInput;
     while (true) {
         cout << prompt;
@@ -27,6 +30,8 @@ string getUserInput(const string& prompt, const string& skinFolder) {
     return userInput;
 }
 
+
+//Copies file from source to destination
 class FileProcessor {
 public:
     static void copyFile(const string& sourcePath, const string& destinationPath) {
@@ -39,8 +44,8 @@ public:
             cout << "File copied successfully \n";
         }
         }}
-
-    static void deleteFile(const string& filePath) {
+    //Deletes original skin hitsounds.
+    static void deleteFile(const string& filePath){
         if (remove(filePath.c_str()) == 0) {
             cout << "Original file deleted successfully \n";
         } else {
@@ -48,13 +53,14 @@ public:
         }
     }
 
-
+    //Processes the file, and moves it to the backup directory.
     static void processFile(const string& oldFilePath, const string& newFilePath, const string& backupFilePath) {
         struct stat buffer{};
         // Check if the old file exists
         if (stat(oldFilePath.c_str(), &buffer) == 0) {
             // Move the old file to the backup directory
             if (rename(oldFilePath.c_str(), backupFilePath.c_str()) != 0) {
+                perror("Error moving old file to backup directory");
             }
             // Check if the new file exists
             if (stat(newFilePath.c_str(), &buffer) == 0) {
@@ -63,26 +69,34 @@ public:
             }
         }
     }
-
-    static void processDirectory(const string& oldOskHs, const string& newOskHs, const string& backupDirPath, DIR* dir) {
+    //Processes the directory, and moves it to the backup directory.
+    static void processDirectory(const string& oldOskHs, const string& newOskHs, const string& backupDirPath, DIR* dir){
         ifstream infile;
         for(const dirent *d = readdir(dir); d != nullptr; d = readdir(dir)) {
             infile.open("hsbanks.txt");
             if (infile.is_open()) {
-                while (!infile.eof()) {
-                    string line;
-                    getline(infile, line);
-                    string oldFilePath = string(oldOskHs) + "\\" + line;
-                    string newFilePath = string(newOskHs) + "\\" + line;
+                string line;
+                while (getline(infile, line)) {
+                    // Remove the file extension
+                    string lineWithoutExtension = line.substr(0, line.find_last_of('.'));
+                    string oldFilePath = oldOskHs + "\\" += line;
+                    string newFilePath = newOskHs + "\\" += line;
                     string backupFilePath = backupDirPath + "\\" += line;
-                    processFile(oldFilePath, newFilePath, backupFilePath);
-                    if (infile.eof()) {
-                        break;
+                    // Process all files in the client skin directory that match the filename
+                    DIR* clientDir = opendir(oldOskHs.c_str());
+                    dirent *clientFile;
+                    while ((clientFile = readdir(clientDir)) != nullptr) {
+                        string clientFileName = clientFile->d_name;
+                        string clientFileNameWithoutExtension = clientFileName.substr(0, clientFileName.find_last_of('.'));
+                        if (clientFileNameWithoutExtension == lineWithoutExtension) {
+                            cout << "Processing file: " << clientFileName << "\n";
+                            processFile(oldOskHs + "\\" += clientFileName, newOskHs + "\\" += clientFileName, backupFilePath);
+                        }
                     }
+                    closedir(clientDir);
                     if (infile.fail()) {
                         infile.clear();
                         infile.ignore('\n');
-                        continue;
                     }
                 }
                 infile.close();
@@ -91,15 +105,19 @@ public:
     }
 };
 
+
+
 int main() {
     DirLookup::DrLookup();
     SkinLookup::oskLookup();
 
-    const string clientSkin = getUserInput("From this list, which skin do you want to change the hitsounds of? (case & white space sensitive)\n", DirLookup::osuSkinFolder);
-    const string hostSkin = getUserInput("Which skin do you want to take the hitsounds from? (case & white space sensitive)\n", DirLookup::osuSkinFolder);
-
-    const string clientSkinPtr = DirLookup::osuSkinFolder + "\\" + clientSkin;
-    const string hostSkinPtr = DirLookup::osuSkinFolder + "\\" + hostSkin;
+    const string initialDir = DirLookup::osuSkinFolder;
+    cout << "\nPlease pick the skin that you want to change the hitsounds of. \n";
+    const string clientSkinPtr = openFolderDialog(initialDir);
+    cout << "> " << clientSkinPtr << ">\n";
+    cout << "\nPlease pick the skin that you want to grab the hitsounds from. \n";
+    const string hostSkinPtr = openFolderDialog(initialDir);
+    cout << "> " << hostSkinPtr << ">\n";
 
     const string backupDirPath = clientSkinPtr + "\\oldhs";
     mkdir(backupDirPath.c_str());
@@ -112,6 +130,11 @@ int main() {
         FileProcessor::processDirectory(clientSkinPtr, hostSkinPtr, backupDirPath, dir);
         closedir(dir);
     }
+
+    cout << endl;
+    cout << "Processing Complete!\n";
+    cin.ignore();
+    cin.get();
 
     return 0;
 }

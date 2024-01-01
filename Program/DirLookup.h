@@ -1,8 +1,3 @@
-/*
-osu! hitsound updater (o!hsu) - Directory Lookup | by Anthony Garcia Roman
-Last edited 21/11/2023.
-*/
-
 #ifndef OHSU_DIRLOOKUP_H
 #define OHSU_DIRLOOKUP_H
 
@@ -10,15 +5,83 @@ Last edited 21/11/2023.
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#include <conio.h>
 #include <windows.h>
 #include <Lmcons.h>
+#include <shobjidl.h>
+#include <locale>
+#include <codecvt>
 
 using namespace std;
-//Global Variable to find UserName
 
+// Function to convert wstring to string
+inline string wstring_to_string(const wstring& wstr)
+{
+    wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converter;
+    return converter.to_bytes(wstr);
+}
 
-//Global Variable to find Skin Folder
+inline std::string openFolderDialog(const std::string& initialDir)
+{
+    IFileDialog *pfd;
+    std::wstring folderPath;
+
+    // Initialize COM library
+    CoInitialize(NULL);
+
+    // Create the FileOpenDialog object.
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+
+    if (SUCCEEDED(hr))
+    {
+        DWORD dwOptions;
+        hr = pfd->GetOptions(&dwOptions);
+        if (SUCCEEDED(hr))
+        {
+            // Set the options to select folders and force filesystem.
+            hr = pfd->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+            if (SUCCEEDED(hr))
+            {
+                // Set the initial directory.
+                IShellItem *psi;
+                hr = SHCreateItemFromParsingName(std::wstring(initialDir.begin(), initialDir.end()).c_str(), NULL, IID_PPV_ARGS(&psi));
+                if (SUCCEEDED(hr))
+                {
+                    pfd->SetFolder(psi);
+                    psi->Release();
+                }
+
+                // Show the Open dialog box.
+                hr = pfd->Show(NULL);
+
+                // Get the file name from the dialog box.
+                if (SUCCEEDED(hr))
+                {
+                    hr = pfd->GetResult(&psi);
+                    if (SUCCEEDED(hr))
+                    {
+                        PWSTR path;
+                        hr = psi->GetDisplayName(SIGDN_FILESYSPATH, &path);
+
+                        // Display the file name to the user.
+                        if (SUCCEEDED(hr))
+                        {
+                            folderPath = path;
+                            CoTaskMemFree(path);
+                        }
+                        psi->Release();
+                    }
+                }
+            }
+        }
+        pfd->Release();
+    }
+
+    // Uninitialize COM library
+    CoUninitialize();
+
+    return wstring_to_string(folderPath);
+}
+
 class DirLookup {
 public:
     static int DrLookup(){
@@ -30,29 +93,9 @@ public:
 
         //Startup Prompt
         cout << "o!hsu (Terminal Version) \n";
-        while (true) {
-            cout << "Enter your skins directory (if it's set to default just type d) \n"
-            "(Put in the format [DriveLetter]:\\.........\\osu!\\Skins) \n";
-            cin >> osuSkinFolder;
-            if (osuSkinFolder.empty()) {
-                cout << "Error: Skin folder cannot be empty. Please try again.\n";
-                continue;
-            }
-            struct stat buffer{};
-            if (stat(osuSkinFolder.c_str(), &buffer) != 0 && osuSkinFolder != "d" && osuSkinFolder != "default") {
-                cout << "Error: Skins directory does not exist. Please try again.\n";
-                continue;
-            }
-            break;
-
-        }
-        //default case (goes to appdata)
-        if (osuSkinFolder == "d" || osuSkinFolder == "default") {
-            char username[UNLEN + 1];
-            DWORD username_len = UNLEN + 1;
-            GetUserName(username, &username_len);
-            osuSkinFolder = "C:\\Users\\" + string(username) + R"(\AppData\Local\osu!\Skins)";
-        }
+        cout << "Please pick the skins directory. \n";
+        const string initialDir = "C:\\";
+        osuSkinFolder = openFolderDialog(initialDir);
 
         //Adds additional backslash to the path for future use (finding the files themselves).
         const string path = osuSkinFolder + "\\";
@@ -80,14 +123,13 @@ public:
                         type = "is a FILE.";
                     }*/
                 }
-                cout<<d->d_name<<endl;
+
             }
             closedir(dir);
         }
 
         //turn into pointer so can be addressed in SkinLookup.h to search
         extern string osuSkinFolder;
-
 
         return 0;
     }
