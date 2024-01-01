@@ -11,6 +11,8 @@
 #include <locale>
 #include <codecvt>
 
+
+
 using namespace std;
 
 // Function to convert wstring to string
@@ -92,8 +94,8 @@ public:
         struct stat dst;
 
         //Startup Prompt
-        cout << "o!hsu (Terminal Version) \n";
-        cout << "Please pick the skins directory. \n";
+        cout << "o!hsu v0.2.0 \n";
+        cout << "Please select the skins directory. \n";
         const string initialDir = "C:\\";
         osuSkinFolder = openFolderDialog(initialDir);
 
