@@ -10,9 +10,6 @@ Last edited 31/12/2023.
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#include <conio.h>
-#include <windows.h>
-#include <Lmcons.h>
 #include "DirLookup.h"
 
 using namespace std;
@@ -34,7 +31,7 @@ public:
         if (dir != nullptr) {
             for (const struct dirent *d = readdir(dir); d != nullptr; d = readdir(dir)) {
                 string type = d->d_name;
-                type = path + type;
+                type += path + type;
                 if (stat(type.c_str(), &dst) == 0) {
                     /*
                     if (dst.st_mode & S_IFDIR)

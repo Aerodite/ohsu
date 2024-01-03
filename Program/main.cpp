@@ -53,13 +53,13 @@ public:
         src.close();
         dst.close();
         if (src.good() || dst.good()) {{
-            cout << "File copied successfully \n";
+            cout << "File copied successfully\n";
         }
         }}
     //Deletes original skin hitsounds.
     static void deleteFile(const string& filePath){
         if (remove(filePath.c_str()) == 0) {
-            cout << "Original file deleted successfully \n";
+            cout << "Original file deleted successfully\n";
         } else {
             perror("Error deleting original file");
         }
@@ -75,7 +75,7 @@ public:
             if (rename(oldFilePath.c_str(), backupFilePath.c_str()) != 0) {
                 perror("Error moving old file to backup directory");
             } else {
-                cout << "Old file moved to backup directory successfully \n";
+                cout << "Old file moved to backup directory successfully\n";
                 // Check if the new file exists
                 if (stat(newFilePath.c_str(), &buffer) == 0) {
                     cout << "New file exists: " << newFilePath << "\n";
@@ -88,7 +88,7 @@ public:
                     if (src.fail() || dst.fail()) {
                         perror("Error copying new file to old file's location");
                     } else {
-                        cout << "New file copied to old file's location successfully \n";
+                        cout << "New file copied to old file's location successfully\n";
                     }
                 } else {
                     cout << "New file does not exist: " << newFilePath << "\n";
@@ -100,14 +100,14 @@ public:
     }
 
     static void convertExtension(const string& oldFilePath, const string& originalExtension) {
-        size_t pos = oldFilePath.find_last_of(".");
+        size_t pos = oldFilePath.find_last_of('.');
         if (pos != string::npos) {
             const string oldFilePathWithoutExtension = oldFilePath.substr(0, pos);
-            const string newFilePath = oldFilePathWithoutExtension + originalExtension;
+            const string newFilePath = (oldFilePathWithoutExtension+originalExtension);
             if (rename(oldFilePath.c_str(), newFilePath.c_str()) != 0) {
                 perror("Error converting file extension");
             } else {
-                cout << "File extension converted successfully \n";
+                cout << "File extension converted successfully\n";
             }
         } else {
             cout << "Old file does not have an extension: " << oldFilePath << "\n";
@@ -128,18 +128,17 @@ static void processDirectory(const string& oldOskHs, const string& newOskHs, con
     }
 
     const std::wstring oldPath = string_to_wstring(oldOskHs +  "\\");
-    _WDIR *oldDir = _wopendir(oldPath.c_str());
 
-    if (oldDir != nullptr) {
-        struct _wdirent *d;
+    if (_WDIR *oldDir = _wopendir(oldPath.c_str()); oldDir != nullptr) {
+        _wdirent *d;
         while ((d = _wreaddir(oldDir)) != nullptr) {
             wstring oldFileName = d->d_name;
             string oldFileNameStr = wstring_to_string(oldFileName);
-            size_t pos = oldFileNameStr.find_last_of(".");
+            size_t pos = oldFileNameStr.find_last_of('.');
             if (pos != string::npos) {
                 wstring newFileName = d->d_name;
                 string newFileNameStr = wstring_to_string(newFileName);
-                size_t pos = newFileNameStr.find_last_of(".");
+                size_t pos = newFileNameStr.find_last_of('.');
 
                 string oldFileExtension = oldFileNameStr.substr(pos); // get extension from filename
                 string newFileExtension = newFileNameStr.substr(pos); // get extension from filename
@@ -147,24 +146,23 @@ static void processDirectory(const string& oldOskHs, const string& newOskHs, con
                 string oldFileNameWithoutExtension = oldFileNameStr.substr(0, pos); // get filename without extension
                 if (find(lines.begin(), lines.end(), oldFileNameWithoutExtension) != lines.end()) {
                     cout << "Processing file: " << oldFileNameWithoutExtension << "\n";
-                    string oldFilePath = oldOskHs + "\\" + oldFileNameWithoutExtension + newFileExtension; // use old file extension
-                    string backupFilePath = backupDirPath + "\\" + oldFileNameWithoutExtension + newFileExtension; // use old file extension
+                    string oldFilePath = oldOskHs + "\\" += oldFileNameWithoutExtension + newFileExtension; // use old file extension
+                    string backupFilePath = backupDirPath + "\\" += oldFileNameWithoutExtension + newFileExtension; // use old file extension
 
                     const std::wstring newPath = string_to_wstring(newOskHs +  "\\");
-                    _WDIR *newDir = _wopendir(newPath.c_str());
 
-                    if (newDir != nullptr) {
-                        struct _wdirent *d;
+                    if (_WDIR *newDir = _wopendir(newPath.c_str()); newDir != nullptr) {
+                        _wdirent *d;
                         while ((d = _wreaddir(newDir)) != nullptr) {
                             wstring newFileName = d->d_name;
                             string newFileNameStr = wstring_to_string(newFileName);
-                            size_t pos = newFileNameStr.find_last_of(".");
+                            size_t pos = newFileNameStr.find_last_of('.');
                             if (pos != string::npos) {
                                 string newFileExtension = newFileNameStr.substr(pos); // get extension from filename
                                 string newFileNameWithoutExtension = newFileNameStr.substr(0, pos); // get filename without extension
                                 if (newFileNameWithoutExtension == oldFileNameWithoutExtension) {
-                                    string backupFilePath = backupDirPath + "\\" + oldFileNameWithoutExtension + oldFileExtension; // use new file extension
-                                    string newFilePath = newOskHs + "\\" + newFileNameWithoutExtension + newFileExtension; // use new file extension
+                                    string backupFilePath = backupDirPath + "\\" += oldFileNameWithoutExtension + oldFileExtension; // use new file extension
+                                    string newFilePath = newOskHs + "\\" += newFileNameWithoutExtension + newFileExtension; // use new file extension
                                     processFile(oldFilePath, newFilePath, backupFilePath);
                                   //  cout << "Calling processFile function\n";
                                     convertExtension(oldFilePath, newFileExtension);
@@ -199,20 +197,18 @@ int main() {
     cout << "> " << hostSkinPtr << ">\n";
 
     const std::wstring backupDirPath = string_to_wstring(clientSkinPtr + "\\oldhs");
-    if (!CreateDirectoryW(backupDirPath.c_str(), NULL)) {
+    if (!CreateDirectoryW(backupDirPath.c_str(), nullptr)) {
         if (GetLastError() != ERROR_ALREADY_EXISTS) {
             wcout << L"Error creating backup directory\n";
             return 1; // Exit the program if the directory could not be created
         }
     }
 
-    std::string backupDirPathStr = wstring_to_string(backupDirPath);
+    const std::string backupDirPathStr = wstring_to_string(backupDirPath);
 
     const string path = clientSkinPtr +  "\\";
 
-    DIR *dir = opendir(path.c_str());
-
-    if (dir != nullptr) {
+    if (DIR *dir = opendir(path.c_str()); dir != nullptr) {
         cout << "Directory opened successfully: " << path << "\n";
         FileProcessor::processDirectory(clientSkinPtr, hostSkinPtr, backupDirPathStr, dir);
         closedir(dir);
