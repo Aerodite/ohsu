@@ -13,7 +13,7 @@ Last edited 31/12/2023.
 #include <conio.h>
 #include <windows.h>
 #include <Lmcons.h>
-#include "Program/DirLookup.h"
+#include "DirLookup.h"
 
 using namespace std;
 
