@@ -55,6 +55,13 @@ inline std::string openFolderDialog(const std::string& initialDir)
                 // Show the Open dialog box.
                 hr = pfd->Show(NULL);
 
+                // Check if the user cancelled the operation
+                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+                {
+                    // User cancelled the operation, exit the program
+                    exit(EXIT_FAILURE);
+                }
+
                 // Get the file name from the dialog box.
                 if (SUCCEEDED(hr))
                 {

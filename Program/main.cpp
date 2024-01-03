@@ -224,6 +224,4 @@ int main() {
     cout << "Processing Complete!\n";
     cin.ignore();
     cin.get();
-
-    return 0;
 }
