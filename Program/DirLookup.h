@@ -6,7 +6,6 @@
 #include <fstream>
 #include <dirent.h>
 #include <windows.h>
-#include <Lmcons.h>
 #include <shobjidl.h>
 #include <locale>
 #include <codecvt>
@@ -18,7 +17,7 @@ using namespace std;
 // Function to convert wstring to string
 inline string wstring_to_string(const wstring& wstr)
 {
-    wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converter;
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
     return converter.to_bytes(wstr);
 }
 
@@ -28,12 +27,11 @@ inline std::string openFolderDialog(const std::string& initialDir)
     std::wstring folderPath;
 
     // Initialize COM library
-    CoInitialize(NULL);
+    CoInitialize(nullptr);
 
     // Create the FileOpenDialog object.
-    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
 
-    if (SUCCEEDED(hr))
+    if (HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd)); SUCCEEDED(hr))
     {
         DWORD dwOptions;
         hr = pfd->GetOptions(&dwOptions);
@@ -45,7 +43,7 @@ inline std::string openFolderDialog(const std::string& initialDir)
             {
                 // Set the initial directory.
                 IShellItem *psi;
-                hr = SHCreateItemFromParsingName(std::wstring(initialDir.begin(), initialDir.end()).c_str(), NULL, IID_PPV_ARGS(&psi));
+                hr = SHCreateItemFromParsingName(std::wstring(initialDir.begin(), initialDir.end()).c_str(), nullptr, IID_PPV_ARGS(&psi));
                 if (SUCCEEDED(hr))
                 {
                     pfd->SetFolder(psi);
@@ -53,7 +51,7 @@ inline std::string openFolderDialog(const std::string& initialDir)
                 }
 
                 // Show the Open dialog box.
-                hr = pfd->Show(NULL);
+                hr = pfd->Show(nullptr);
 
                 // Check if the user cancelled the operation
                 if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
@@ -97,8 +95,7 @@ public:
         ifstream infile;
 
         //pointers to point to directories.
-        struct dirent *d;
-        struct stat dst;
+        struct stat dst{};
 
         //Startup Prompt
         cout << "o!hsu v0.2.0 \n";
@@ -109,16 +106,14 @@ public:
         //Adds additional backslash to the path for future use (finding the files themselves).
         const string path = osuSkinFolder + "\\";
 
-        //Opens the directory read into cin.
-        DIR *dir = opendir(path.c_str());
-
         //Verifies directory is not NULL, and assigns a type to each type of file.
         //e.g. if it's a folder, it'll say it's a folder (mainly for debugging purposes).
-        if (dir != NULL) {
-            for(d = readdir(dir); d != NULL; d = readdir(dir))
+        if (DIR *dir = opendir(path.c_str()); dir != nullptr) {
+            dirent *d;
+            for(d = readdir(dir); d != nullptr; d = readdir(dir))
             {
                 string type = d->d_name;
-                type = path + type;
+                type += path + type;
                 if (stat(type.c_str(), &dst) == 0)
                 {/*
                     if (dst.st_mode & S_IFDIR)

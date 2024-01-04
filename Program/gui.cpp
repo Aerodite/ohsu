@@ -3,7 +3,6 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVBoxLayout>
-
 int gui(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
