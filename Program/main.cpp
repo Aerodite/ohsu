@@ -12,6 +12,33 @@
 #include <shlobj.h>
 #include <vector>
 #include <algorithm>
+#include <QApplication>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QApplication>
+#include <QMainWindow>
+#include <QCloseEvent>
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    explicit MainWindow(QWidget *parent = nullptr)
+        : QMainWindow(parent)
+    {
+        // Connect the aboutToQuit signal to the cleanup slot
+        connect(qApp, &QApplication::aboutToQuit, this, &MainWindow::cleanup);
+    }
+
+    protected slots:
+        void cleanup()
+    {
+        this->close();
+    }
+};
 
 
 // Function to convert string to wstring
@@ -20,7 +47,6 @@ inline std::wstring string_to_wstring(const std::string& str)
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(str);
 }
-
 //gets user input for the skin name(s)
 string getUserInput(const string& prompt, const string& skinFolder){
     string userInput;
@@ -184,8 +210,42 @@ static void processDirectory(const string& oldOskHs, const string& newOskHs, con
     }
 }
 };
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
 
-int main() {
+    QMainWindow window;
+    window.setWindowTitle("o!hsu");
+    window.resize(727, 427);
+    window.setWindowIcon(QIcon("ohsu.ico"));
+
+    auto *centralWidget = new QWidget(&window);
+
+    auto *layout = new QVBoxLayout(centralWidget);
+
+    auto *buttonLayout = new QHBoxLayout();
+
+    auto *changeSkinBtn = new QPushButton("Button 1", centralWidget);
+    auto *grabSkinBtn = new QPushButton("Button 2", centralWidget);
+
+    changeSkinBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    grabSkinBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    buttonLayout->addWidget(changeSkinBtn, 35);
+    buttonLayout->addWidget(grabSkinBtn, 35);
+
+    buttonLayout->insertStretch(0, 5);
+    buttonLayout->insertStretch(3, 5);
+
+    layout->addLayout(buttonLayout);
+
+    auto *label = new QLabel("o!hsu", centralWidget);
+    layout->addWidget(label);
+
+    centralWidget->setLayout(layout);
+
+    window.setCentralWidget(centralWidget);
+
+    window.show();
     SetConsoleOutputCP(CP_UTF8);
     DirLookup::DrLookup();
     SkinLookup::oskLookup();
@@ -222,6 +282,7 @@ int main() {
 
     cout << endl;
     cout << "Processing Complete!\n";
-    cin.ignore();
-    cin.get();
+
+    return app.exec();
+
 }

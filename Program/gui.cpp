@@ -1,4 +1,4 @@
-#include <QApplication>
+/*#include <QApplication>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QLabel>
@@ -33,4 +33,4 @@ int gui(int argc, char *argv[]) {
     window.show();
 
     return QApplication::exec();
-}
+}*/
