@@ -1,7 +1,10 @@
 #ifndef _resource_rc
 #define _resource_rc
 
-MAINICON ICON "ohsu.ico"
+MAINICON ICON "ohsuhd.ico"
+IDI_ICON1               ICON    DISCARDABLE     "ohsu.ico"
+IDI_ICON1               ICON    DISCARDABLE     "ohsu128.ico"
+IDI_ICON1               ICON    DISCARDABLE     "ohsu64.ico"
 
 
 #endif

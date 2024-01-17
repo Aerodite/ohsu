@@ -19,20 +19,20 @@ class SkinLookup {
 public:
 //Global Variable to find Skin Folder
     static int oskLookup() {
-        ifstream infile;
+        wifstream infile;
 
         struct stat dst{};
 
 
-        const string path = DirLookup::osuSkinFolder + "\\";
+        //const string path = DirLookup::osuSkinFolder + "\\";
 
-        DIR *dir = opendir(path.c_str());
+        //DIR *dir = opendir(path.c_str());
 
-        if (dir != nullptr) {
-            for (const struct dirent *d = readdir(dir); d != nullptr; d = readdir(dir)) {
-                string type = d->d_name;
-                type += path + type;
-                if (stat(type.c_str(), &dst) == 0) {
+       // if (dir != nullptr) {
+           // for (const struct dirent *d = readdir(dir); d != nullptr; d = readdir(dir)) {
+           //     string type = d->d_name;
+              //  type += path + type;
+              //  if (stat(type.c_str(), &dst) == 0) {
                     /*
                     if (dst.st_mode & S_IFDIR)
                     {
@@ -44,13 +44,15 @@ public:
                         // for verification if necessary
                         type = "is a FILE.";
                     }*/
-                }
-                cout << d->d_name << endl;
-            }
-            closedir(dir);
-        }
-
         return 0;
-    }
-};
+                }
+          //      cout << d->d_name << endl;
+            //}
+                //closedir(dir);
+        };
+
+   //     return 0;
+   // }
+//};
+
 #endif

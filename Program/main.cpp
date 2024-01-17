@@ -1,87 +1,69 @@
-#include "DirLookup.h"
-#include <dirent.h>
-#include <sys/stat.h>
-#include <fstream>
-#include <iostream>
-#include "SkinLookup.h"
-#include <locale>
-#include <codecvt>
-#include <iostream>
-#include <fstream>
-#include <windows.h>
-#include <shlobj.h>
-#include <vector>
 #include <algorithm>
+#include <codecvt>
+#include <dirent.h>
+#include <fstream>
+#include <fstream>
+#include <iostream>
+#include <iostream>
+#include <locale>
 #include <QApplication>
-#include <QMainWindow>
-#include <QPushButton>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QApplication>
-#include <QMainWindow>
+#include <QBoxLayout>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QGroupBox>
+#include <QIcon>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMetaObject>
+#include <QPushButton>
+#include <QThread>
+#include <QTimer>
+#include <QToolBar>
+#include <shlobj.h>
+#include <string>
+#include <vector>
+#include <windows.h>
+#include <sys/stat.h>
+#include <QComboBox>
+#include <fcntl.h>
+#include <io.h>
+#include <set>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
 
-public:
-    explicit MainWindow(QWidget *parent = nullptr)
-        : QMainWindow(parent)
-    {
-        // Connect the aboutToQuit signal to the cleanup slot
-        connect(qApp, &QApplication::aboutToQuit, this, &MainWindow::cleanup);
-    }
-
-    protected slots:
-        void cleanup()
-    {
-        this->close();
-    }
-};
+#include "DirLookup.h"
+#include "SkinLookup.h"
+#include "MainWindow.h"
 
 
-// Function to convert string to wstring
+
+const QMetaObject *MainWindow::metaObject() const {
+    return QMainWindow::metaObject();
+}
+
+void *MainWindow::qt_metacast(const char *string) {
+    return QMainWindow::qt_metacast(string);
+}
+
+int MainWindow::qt_metacall(const QMetaObject::Call call, const int i, void **p) {
+    return QMainWindow::qt_metacall(call, i, p);
+}
+
+void MainWindow::qt_static_metacall(QObject *, QMetaObject::Call, int, void **) {
+}
+
 inline std::wstring string_to_wstring(const std::string& str)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(str);
 }
-//gets user input for the skin name(s)
-string getUserInput(const string& prompt, const string& skinFolder){
-    string userInput;
-    while (true) {
-        cout << prompt;
-        cin >> userInput;
-        if (userInput.empty()) {
-            cout << "Error: Skin name cannot be empty. Please try again.\n";
-            continue;
-        }
-        string skinPath = skinFolder + "\\" += userInput;
-        struct stat buffer{};
-        if (stat(skinPath.c_str(), &buffer) != 0) {
-            cout << "Error: Skin directory does not exist. Please try again.\n";
-            continue;
-        }
-        break;
-    }
-    return userInput;
-}
-
-
 //Copies file from source to destination
 class FileProcessor {
 public:
-    static void copyFile(const string& sourcePath, const string& destinationPath) {
-        ifstream src(sourcePath, ios::binary);
-        ofstream dst(destinationPath, ios::binary);
-        dst << src.rdbuf();
-        src.close();
-        dst.close();
-        if (src.good() || dst.good()) {{
-            cout << "File copied successfully\n";
+    static void copyFile(const std::wstring& sourcePath, const std::wstring& destinationPath) {
+        if (!CopyFileW(sourcePath.c_str(), destinationPath.c_str(), FALSE)) {
+            std::wcerr << L"Failed to copy file: " << sourcePath << L" to " << destinationPath << std::endl;
         }
-        }}
+    }
     //Deletes original skin hitsounds.
     static void deleteFile(const string& filePath){
         if (remove(filePath.c_str()) == 0) {
@@ -90,109 +72,243 @@ public:
             perror("Error deleting original file");
         }
     }
+     // Returns a vector of the paths of the hitsound files in a given directory
+    static std::vector<std::wstring> getHitsoundPaths(const std::wstring& directoryPath) {
+        std::vector<std::wstring> hitsoundPaths;
 
-    //Processes the file, and moves it to the backup directory.
-    static void processFile(const string& oldFilePath, const string& newFilePath, const string& backupFilePath) {
-        struct stat buffer{};
+        // Open the directory
+        _WDIR* dir = _wopendir(directoryPath.c_str());
+        if (dir == nullptr) {
+            std::wcerr << L"Failed to open directory: " << directoryPath << std::endl;
+            return hitsoundPaths;
+        }
+
+        // Read the directory
+        struct _wdirent* entry;
+        while ((entry = _wreaddir(dir)) != nullptr) {
+            // Check if the file is a hitsound file
+            if (isHitsoundFile(entry->d_name)) {
+                // Construct the path of the hitsound file
+                std::wstring hitsoundPath = directoryPath + L"\\" + entry->d_name;
+
+                // Add the hitsound file path to the hitsoundPaths vector
+                hitsoundPaths.push_back(hitsoundPath);
+            }
+        }
+
+        // Close the directory
+        _wclosedir(dir);
+
+        return hitsoundPaths;
+    }
+
+    // Reads the hsbanks.txt file and stores the hitsound names in a set
+    static std::set<std::wstring> readHsbanks() {
+        std::set<std::wstring> hsbanks;
+        // Open the hsbanks.txt file
+        std::wifstream file(L"hsbanks.txt");
+        std::wstring line;
+        // Read the file line by line
+        while (std::getline(file, line)) {
+            // Add the line to the set
+            hsbanks.insert(line);
+        }
+        return hsbanks;
+    }
+
+    // Checks if a file is a hitsound file
+    static bool isHitsoundFile(const wchar_t* fileName) {
+        // Define the hitsound file extensions
+        std::vector<std::wstring> hitsoundExtensions = {L".wav", L".mp3"};
+
+        // Get the extension of the file
+        std::wstring fileExtension = std::filesystem::path(fileName).extension().wstring();
+
+        // Check if the file has a hitsound file extension
+        return std::find(hitsoundExtensions.begin(), hitsoundExtensions.end(), fileExtension) != hitsoundExtensions.end();
+    }
+
+    // Checks if a file exists
+    static bool fileExists(const std::wstring& filePath) {
+        return std::filesystem::exists(filePath);
+    }
+
+    // Returns the extension of a file
+    static std::wstring getFileExtension(const std::wstring& filePath) {
+        return std::filesystem::path(filePath).extension().wstring();
+    }
+
+    // Converts a file to .wav format
+    static void convertToWav(const std::wstring& sourcePath, const std::wstring& destinationPath) {
+        // You need to implement this function
+    }
+
+    // Converts a file to .mp3 format
+    static void convertToMp3(const std::wstring& sourcePath, const std::wstring& destinationPath) {
+        // You need to implement this function
+    }
+    static std::wstring getFileNameWithoutExtension(const std::wstring& filePath) {
+        return std::filesystem::path(filePath).stem().wstring();
+    }
+
+static void changeHitsounds(QComboBox* targetSkinComboBox, QComboBox* sourceSkinComboBox) {
+    // Get the selected skins
+    QString selectedSkin = targetSkinComboBox->currentText();
+    QString selectedHitsounds = sourceSkinComboBox->currentText();
+
+    // Convert the selected skins to std::wstring
+    std::wstring selectedSkinWstr = selectedSkin.toStdWString();
+    std::wstring selectedHitsoundsWstr = selectedHitsounds.toStdWString();
+
+    // Get the paths of the hitsound files in the source skin directory
+    std::vector<std::wstring> sourceHitsoundPaths = getHitsoundPaths(selectedHitsoundsWstr);
+
+    // Read the hsbanks.txt file and store the hitsound names in a set
+    std::set<std::wstring> hsbanks = readHsbanks();
+
+    // For each hitsound file in the source skin directory
+    for (const std::wstring& sourceHitsoundPath : sourceHitsoundPaths) {
+        // Get the name of the hitsound file without the extension
+        std::wstring hitsoundName = getFileNameWithoutExtension(sourceHitsoundPath);
+
+        // Check if the hitsound name is listed in hsbanks.txt
+        if (hsbanks.find(hitsoundName) != hsbanks.end()) {
+            // Construct the path of the hitsound file in the target skin directory
+            std::wstring targetHitsoundPath = selectedSkinWstr + L"\\" + hitsoundName;
+
+            // Check if the hitsound file in the target skin directory exists
+            if (fileExists(targetHitsoundPath + L".wav")) {
+                // If the hitsound file in the source skin directory is a .wav file, replace the hitsound file in the target skin directory
+                if (getFileExtension(sourceHitsoundPath) == L".wav") {
+                    copyFile(sourceHitsoundPath, targetHitsoundPath + L".wav");
+                }
+                // If the hitsound file in the source skin directory is not a .wav file, convert it to .wav and replace the hitsound file in the target skin directory
+                else {
+                    convertToWav(sourceHitsoundPath, targetHitsoundPath + L".wav");
+                }
+            }
+            else if (fileExists(targetHitsoundPath + L".mp3")) {
+                // If the hitsound file in the source skin directory is a .mp3 file, replace the hitsound file in the target skin directory
+                if (getFileExtension(sourceHitsoundPath) == L".mp3") {
+                    copyFile(sourceHitsoundPath, targetHitsoundPath + L".mp3");
+                }
+                // If the hitsound file in the source skin directory is not a .mp3 file, convert it to .mp3 and replace the hitsound file in the target skin directory
+                else {
+                    convertToMp3(sourceHitsoundPath, targetHitsoundPath + L".mp3");
+                }
+            }
+        }
+    }
+}
+
+
+ //Processes the file, and moves it to the backup directory.
+    void processFile(const std::wstring& oldFilePath, const std::wstring& newFilePath, const std::wstring& backupFilePath) {
+        struct _stat buffer{};
         // Check if the old file exists
-        if (stat(oldFilePath.c_str(), &buffer) == 0) {
-            cout << "Old file exists: " << oldFilePath << "\n";
+        if (_wstat(oldFilePath.c_str(), &buffer) == 0) {
+            std::wcout << L"Old file exists: " << oldFilePath << L"\n";
             // Move the old file to the backup directory
-            if (rename(oldFilePath.c_str(), backupFilePath.c_str()) != 0) {
+            if (_wrename(oldFilePath.c_str(), backupFilePath.c_str()) != 0) {
                 perror("Error moving old file to backup directory");
             } else {
-                cout << "Old file moved to backup directory successfully\n";
+                std::wcout << L"Old file moved to backup directory successfully\n";
                 // Check if the new file exists
-                if (stat(newFilePath.c_str(), &buffer) == 0) {
-                    cout << "New file exists: " << newFilePath << "\n";
+                if (_wstat(newFilePath.c_str(), &buffer) == 0) {
+                    std::wcout << L"New file exists: " << newFilePath << L"\n";
                     // Copy the new file to the old file's location
-                    ifstream src(newFilePath, ios::binary);
-                    ofstream dst(oldFilePath, ios::binary);
-                    dst << src.rdbuf();
-                    src.close();
-                    dst.close();
-                    if (src.fail() || dst.fail()) {
+                    FILE* srcFile = _wfopen(newFilePath.c_str(), L"rb");
+                    FILE* dstFile = _wfopen(oldFilePath.c_str(), L"wb");
+                    char buffer[BUFSIZ];
+                    size_t size;
+
+                    while (size = fread(buffer, 1, BUFSIZ, srcFile)) {
+                        fwrite(buffer, 1, size, dstFile);
+                    }
+
+                    fclose(srcFile);
+                    fclose(dstFile);
+
+                    if (!srcFile || !dstFile) {
                         perror("Error copying new file to old file's location");
                     } else {
-                        cout << "New file copied to old file's location successfully\n";
+                        std::wcout << L"New file copied to old file's location successfully\n";
                     }
                 } else {
-                    cout << "New file does not exist: " << newFilePath << "\n";
+                    std::wcout << L"New file does not exist: " << newFilePath << L"\n";
                 }
             }
         } else {
-            cout << "Old file does not exist: " << oldFilePath << "\n";
+            std::wcout << L"Old file does not exist: " << oldFilePath << L"\n";
         }
     }
 
-    static void convertExtension(const string& oldFilePath, const string& originalExtension) {
-        size_t pos = oldFilePath.find_last_of('.');
-        if (pos != string::npos) {
-            const string oldFilePathWithoutExtension = oldFilePath.substr(0, pos);
-            const string newFilePath = (oldFilePathWithoutExtension+originalExtension);
-            if (rename(oldFilePath.c_str(), newFilePath.c_str()) != 0) {
-                perror("Error converting file extension");
-            } else {
-                cout << "File extension converted successfully\n";
-            }
+static void convertExtension(const std::wstring& oldFilePath, const std::wstring& newFileExtension) {
+    size_t pos = oldFilePath.find_last_of(L'.');
+    if (pos != std::wstring::npos) {
+        std::wstring newFilePath = oldFilePath.substr(0, pos) + newFileExtension;
+        if (_wrename(oldFilePath.c_str(), newFilePath.c_str()) != 0) {
+            perror("Error converting file extension");
         } else {
-            cout << "Old file does not have an extension: " << oldFilePath << "\n";
+            std::wcout << L"File extension converted successfully\n";
         }
+    } else {
+        std::wcout << L"Old file does not have an extension: " << oldFilePath << L"\n";
     }
+}
 
     //Processes the directory, and moves it to the backup directory.
-static void processDirectory(const string& oldOskHs, const string& newOskHs, const string& backupDirPath, DIR* dir){
-    //cout << "Entering processDirectory function\n";
-    ifstream infile("hsbanks.txt");
-    vector<string> lines;
+static void processDirectory(const std::wstring& oldOskHs, const std::wstring& newOskHs, const std::wstring& backupDirPath, _WDIR* dir){
+    std::wifstream infile(L"hsbanks.txt");
+    std::vector<std::wstring> lines;
     if (infile.is_open()) {
-        string line;
-        while (getline(infile, line)) {
-            lines.push_back(line.substr(0, line.find_last_of('.'))); // store filename without extension
+        std::wstring line;
+        while (std::getline(infile, line)) {
+            lines.push_back(line.substr(0, line.find_last_of(L'.'))); // store filename without extension
         }
         infile.close();
     }
 
-    const std::wstring oldPath = string_to_wstring(oldOskHs +  "\\");
+    const std::wstring oldPath = oldOskHs +  L"/";
 
     if (_WDIR *oldDir = _wopendir(oldPath.c_str()); oldDir != nullptr) {
         _wdirent *d;
         while ((d = _wreaddir(oldDir)) != nullptr) {
-            wstring oldFileName = d->d_name;
-            string oldFileNameStr = wstring_to_string(oldFileName);
-            size_t pos = oldFileNameStr.find_last_of('.');
-            if (pos != string::npos) {
-                wstring newFileName = d->d_name;
-                string newFileNameStr = wstring_to_string(newFileName);
-                size_t pos = newFileNameStr.find_last_of('.');
+            std::wstring oldFileName = d->d_name;
+            std::wstring oldFileNameStr = oldFileName;
+            size_t pos = oldFileNameStr.find_last_of(L'.');
+            if (pos != std::wstring::npos) {
+                std::wstring newFileName = d->d_name;
+                std::wstring newFileNameStr = newFileName;
+                size_t pos = newFileNameStr.find_last_of(L'.');
 
-                string oldFileExtension = oldFileNameStr.substr(pos); // get extension from filename
-                string newFileExtension = newFileNameStr.substr(pos); // get extension from filename
-                string newFileNameWithoutExtension = newFileNameStr.substr(0, pos); // get filename without extension
-                string oldFileNameWithoutExtension = oldFileNameStr.substr(0, pos); // get filename without extension
-                if (find(lines.begin(), lines.end(), oldFileNameWithoutExtension) != lines.end()) {
-                    cout << "Processing file: " << oldFileNameWithoutExtension << "\n";
-                    string oldFilePath = oldOskHs + "\\" += oldFileNameWithoutExtension + newFileExtension; // use old file extension
-                    string backupFilePath = backupDirPath + "\\" += oldFileNameWithoutExtension + newFileExtension; // use old file extension
+                std::wstring oldFileExtension = oldFileNameStr.substr(pos); // get extension from filename
+                std::wstring newFileExtension = newFileNameStr.substr(pos); // get extension from filename
+                std::wstring newFileNameWithoutExtension = newFileNameStr.substr(0, pos); // get filename without extension
+                std::wstring oldFileNameWithoutExtension = oldFileNameStr.substr(0, pos); // get filename without extension
+                if (std::find(lines.begin(), lines.end(), oldFileNameWithoutExtension) != lines.end()) {
+                    std::wcout << L"Processing file: " << oldFileNameWithoutExtension << L"\n";
+                    std::wstring oldFilePath = oldOskHs + L"\\" + oldFileNameWithoutExtension + newFileExtension; // use old file extension
+                    std::wstring backupFilePath = backupDirPath + L"\\" + oldFileNameWithoutExtension + newFileExtension; // use old file extension
 
-                    const std::wstring newPath = string_to_wstring(newOskHs +  "\\");
+                    const std::wstring newPath = newOskHs + L"\\";
 
                     if (_WDIR *newDir = _wopendir(newPath.c_str()); newDir != nullptr) {
                         _wdirent *d;
                         while ((d = _wreaddir(newDir)) != nullptr) {
-                            wstring newFileName = d->d_name;
-                            string newFileNameStr = wstring_to_string(newFileName);
-                            size_t pos = newFileNameStr.find_last_of('.');
-                            if (pos != string::npos) {
-                                string newFileExtension = newFileNameStr.substr(pos); // get extension from filename
-                                string newFileNameWithoutExtension = newFileNameStr.substr(0, pos); // get filename without extension
+                            std::wstring newFileName = d->d_name;
+                            std::wstring newFileNameStr = newFileName;
+                            size_t pos = newFileNameStr.find_last_of(L'.');
+                            if (pos != std::wstring::npos) {
+                                std::wstring newFileExtension = newFileNameStr.substr(pos); // get extension from filename
+                                std::wstring newFileNameWithoutExtension = newFileNameStr.substr(0, pos); // get filename without extension
                                 if (newFileNameWithoutExtension == oldFileNameWithoutExtension) {
-                                    string backupFilePath = backupDirPath + "\\" += oldFileNameWithoutExtension + oldFileExtension; // use new file extension
-                                    string newFilePath = newOskHs + "\\" += newFileNameWithoutExtension + newFileExtension; // use new file extension
-                                    processFile(oldFilePath, newFilePath, backupFilePath);
-                                  //  cout << "Calling processFile function\n";
+                                    std::wstring backupFilePath = backupDirPath + L"\\" + oldFileNameWithoutExtension + oldFileExtension; // use new file extension
+                                    std::wstring newFilePath = newOskHs + L"\\" + newFileNameWithoutExtension + newFileExtension; // use new file extension
+                                    FileProcessor fileProcessor;
+                                    fileProcessor.processFile(oldFilePath, newFilePath, backupFilePath);
                                     convertExtension(oldFilePath, newFileExtension);
-                                    cout << "Converting file extension\n";
+                                    std::wcout << L"Converting file extension\n";
                                 }
                             }
 
@@ -204,81 +320,111 @@ static void processDirectory(const string& oldOskHs, const string& newOskHs, con
         }
         _wclosedir(oldDir);
     } else {
-        wcout << L"Failed to open old skin directory: " << oldPath << L"\n";
+        std::wcout << L"Failed to open old skin directory: " << oldPath << L"\n";
     }
 }
 };
 int main(int argc, char *argv[]) {
+    _setmode(_fileno(stdout), _O_U16TEXT);
+    SetConsoleOutputCP(CP_UTF8);
     QApplication app(argc, argv);
 
     QMainWindow window;
-    window.setWindowTitle("o!hsu");
+    window.setWindowTitle("o!hsu 0.3.0");
     window.resize(727, 427);
-    window.setWindowIcon(QIcon("ohsu.ico"));
+    window.setWindowIcon(QIcon(":/IDI_ICON1"));
 
+    window.setStyleSheet("background-color:grey;");
+
+    // Create a QWidget for the central widget of the main window
     auto *centralWidget = new QWidget(&window);
 
-    auto *layout = new QVBoxLayout(centralWidget);
+    // Get the osuDirectory
+    const std::wstring osuDirectory = getOsuDirectory();
 
-    auto *buttonLayout = new QHBoxLayout();
+    QLabel *osuDirectoryLabel = new QLabel(QString::fromStdWString(osuDirectory), centralWidget);
 
-    auto *changeSkinBtn = new QPushButton("Button 1", centralWidget);
-    auto *grabSkinBtn = new QPushButton("Button 2", centralWidget);
+    auto *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(osuDirectoryLabel);
 
-    changeSkinBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    grabSkinBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    auto *groupBox = new QGroupBox("osu! directory:", centralWidget);
+    groupBox->setLayout(vBoxLayout);
 
-    buttonLayout->addWidget(changeSkinBtn, 35);
-    buttonLayout->addWidget(grabSkinBtn, 35);
+    // Allow the QBox to resize if the window is resized
+    groupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    buttonLayout->insertStretch(0, 5);
-    buttonLayout->insertStretch(3, 5);
+    auto *layout = new QVBoxLayout;
+    layout->addWidget(groupBox);
 
-    layout->addLayout(buttonLayout);
+    // Set the stretch factor of the QGroupBox to make it take up a certain percentage of the height
+    // which is intentionally funny :)
+    layout->setStretchFactor(groupBox, 0.15727);
+    layout->addStretch(1);
 
-    auto *label = new QLabel("o!hsu", centralWidget);
-    layout->addWidget(label);
+    auto *selectSkinComboBox = new QComboBox;
+    auto *selectHitsoundsComboBox = new QComboBox;
 
+    // placeholder text because I think they describe it well enough.
+    auto *selectSkinLabel = new QLabel("Change hitsounds of this skin");
+    auto *selectHitsoundsLabel = new QLabel("Grab hitsounds from this skin");
+
+    // Get a list of all the skins in the skin folder
+    const QDir skinDir(QString::fromStdWString(getOsuDirectory()));
+    QStringList skins = skinDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    // Add each skin to the QComboBoxes
+    for (const QString &skin : skins) {
+        selectSkinComboBox->addItem(skin);
+        selectHitsoundsComboBox->addItem(skin);
+    }
+
+
+    layout->addWidget(selectSkinLabel);
+    layout->addWidget(selectSkinComboBox);
+    layout->addWidget(selectHitsoundsLabel);
+    layout->addWidget(selectHitsoundsComboBox);
+
+    // Set the layout to the center
     centralWidget->setLayout(layout);
-
     window.setCentralWidget(centralWidget);
 
-    window.show();
+    osuDirectoryLabel->setAlignment(Qt::AlignCenter | Qt::AlignTop);
+    //lots of osu skins have weird unicode characters, support is critical.
     SetConsoleOutputCP(CP_UTF8);
-    DirLookup::DrLookup();
-    SkinLookup::oskLookup();
 
-    const string initialDir = DirLookup::osuSkinFolder;
-    cout << "\nPlease pick the skin that you want to change the hitsounds of. \n";
-    const string clientSkinPtr = openFolderDialog(initialDir);
-    cout << "> " << clientSkinPtr << ">\n";
-    cout << "\nPlease pick the skin that you want to grab the hitsounds from. \n";
-    const string hostSkinPtr = openFolderDialog(initialDir);
-    cout << "> " << hostSkinPtr << ">\n";
-
-    const std::wstring backupDirPath = string_to_wstring(clientSkinPtr + "\\oldhs");
-    if (!CreateDirectoryW(backupDirPath.c_str(), nullptr)) {
-        if (GetLastError() != ERROR_ALREADY_EXISTS) {
-            wcout << L"Error creating backup directory\n";
-            return 1; // Exit the program if the directory could not be created
-        }
+    for (const QString &skin : skins) {
+        selectSkinComboBox->addItem(skin);
+        selectHitsoundsComboBox->addItem(skin);
     }
+    //console logging because this is prone to failure on some utf skins (for now)
+    QObject::connect(selectSkinComboBox, QOverload<int>::of(&QComboBox::activated), [=](int){
+        const QString selectedSkin = selectSkinComboBox->currentText();
+        std::wstring osuDirectory = getOsuDirectory();
+        std::wstring selectedSkinPath = osuDirectory + L"\\" + selectedSkin.toStdWString();
+        std::wcout << "Selected skin path: " << selectedSkinPath << std::endl;
+    });
+    QObject::connect(selectHitsoundsComboBox, QOverload<int>::of(&QComboBox::activated), [=](int){
+        const QString selectedHitsounds = selectHitsoundsComboBox->currentText();
+        std::wstring osuDirectory = getOsuDirectory();
+        std::wstring selectedHitsoundsPath = osuDirectory + L"\\" + selectedHitsounds.toStdWString();
+        std::wcout << "Selected hitsounds path: " << selectedHitsoundsPath << std::endl;
+    });
 
-    const std::string backupDirPathStr = wstring_to_string(backupDirPath);
+    auto *confirmButton = new QPushButton("Confirm");
 
-    const string path = clientSkinPtr +  "\\";
+    // Connect the clicked signal of the "Confirm" button to a slot that changes the hitsounds
+    // Connect the clicked signal of the "Confirm" button to a slot that changes the hitsounds
+    QObject::connect(confirmButton, &QPushButton::clicked, [&](){
+        // Change the hitsounds of the selected skin using the hitsounds of the other selected skin
+        FileProcessor::changeHitsounds(selectSkinComboBox, selectHitsoundsComboBox);
+    });
 
-    if (DIR *dir = opendir(path.c_str()); dir != nullptr) {
-        cout << "Directory opened successfully: " << path << "\n";
-        FileProcessor::processDirectory(clientSkinPtr, hostSkinPtr, backupDirPathStr, dir);
-        closedir(dir);
-    } else {
-        cout << "Failed to open directory: " << path << "\n";
-    }
+    // Add the "Confirm" button to the layout
+    layout->addWidget(confirmButton);
 
-    cout << endl;
-    cout << "Processing Complete!\n";
 
-    return app.exec();
+    window.show();
+    std::wcout << "osu! directory: " << osuDirectory << L"\n";
 
+    return QApplication::exec();
 }
